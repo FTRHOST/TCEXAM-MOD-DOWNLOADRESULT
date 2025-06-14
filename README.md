@@ -1,70 +1,76 @@
-# Getting Started with Create React App
+# Tcexam Mod Result Download (user friendly)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+[![Feature](https://github.com/FTRHOST/TCEXAM-MOD-DOWNLOADRESULT/blob/main/doc/feature.png?raw=true "Feature")](https://github.com/FTRHOST/TCEXAM-MOD-DOWNLOADRESULT/blob/main/doc/feature.png?raw=true "Feature")
 
-In the project directory, you can run:
 
-### `npm start`
+**Table of Contents**
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+[TOC]
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+##Cara menginstall API di tcexam
+Aplikasi ini terintegrasi dengan API (Application Programming Interface) pada aplikasi ujian Tcexam yang terhubung langsung dengan database. Ikuti langkah berikut untuk menjalankan fitur API pada tcexam.
+Cara pemasangan:
+1. Git Clone projek ini
+```shell
+git clone https://github.com/FTRHOST/TCEXAM-MOD-DOWNLOADRESULT.git
+```
+2. Masuk ke folder inject copy folder admin dan shared ke dalam folder root tcexam.
+3. Buka file shared/config/tce_paths.php dan paste kode berikut diatas
+// DOCUMENT_ROOT fix for IIS Webserver
 
-### `npm test`
+```php
+//====START MOD====
+// Tambahkan baris kode ini untuk patch tce api download result
+// pada file /shared/config/tce_paths.php
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+/**
+ * Full path to admin code directory.
+ */
+define('K_PATH_ADMIN_CODE', K_PATH_MAIN.'admin/code/');
 
-### `npm run build`
+//======KODE END MOD
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+// DOCUMENT_ROOT fix for IIS Webserver
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+4. Setelah itu cek pada link https://namawebtes.com/admin/code/api.php
+kalau muncul keterangan JSON seperti ini, itu tandanya sudah berhasil
+```json
+{"error":"Invalid API Key"}
+```
+5. (Opsional) Edit API key yang anda mau, buka file /admin/code/api.php dan edit pada bagian ini dan ganti API key default yaitu "hahay"
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```php
+// API Key authorization check
+$api_key = isset($_GET['api_key']) ? sanitize_input($_GET['api_key']) : '';
+$SECRET_API_KEY = 'hahay'; // GANTI DENGAN KUNCI RAHASIA YANG KUAT!
 
-### `npm run eject`
+if ($api_key !== $SECRET_API_KEY) {
+    send_json_response(['error' => 'Invalid API Key'], 401);
+    exit;
+}
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+##Langkah frontend atau Landing Page Download
+Pada langkah ini kita menggunakan framework javascript untuk menjalankan page download yang user friendly berikut cara pemasanganya:
+1. Setelah selesai pemasangan API pada tcexam, langkah berikutnya adalah mengkonfigurasi config pada frontend.
+2. Buka file konfigurasi di src/services/api.js
+```php
+//silahkan sesuaikan dengan url api kalian
+const API_URL= 'https://namawebtes.com/';
+const API_KEY = 'hahay'; // GANTI DENGAN KUNCI RAHASIA YANG SAMA DENGAN BACKEND!
+```
+3. Selanjutnya install module reactnya
+```shell
+npm i
+```
+4. Selanjutnya build aplikasi
+```shell
+npm run build
+```
+5. Selanjutnya jalankan dist yang telah dibuild oleh projectnya dengan webserver.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+###terima kasih untuk supportnya by ftrhost and MA NU 01 Banyuputih
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+###End

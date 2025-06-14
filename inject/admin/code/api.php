@@ -5,12 +5,11 @@
 // Begin       : 2024-03-19
 // Last Update : 2024-03-19
 //
-// Author: Your Name
+// Author: ftrhost
 //
 // (c) Copyright:
-//               Your Organization
-//               www.yourdomain.com
-//               info@yourdomain.com
+//               Mansaba Media
+//               ftr.vercel.app
 //
 // License:
 //    See LICENSE.TXT file for more information.
@@ -121,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // API Key authorization check
 $api_key = isset($_GET['api_key']) ? sanitize_input($_GET['api_key']) : '';
-$SECRET_API_KEY = 'hahay'; // GANTI DENGAN KUNCI RAHASIA YANG KUAT!
+$SECRET_API_KEY = 'GANTI DENGAN KUNCI RAHASIA YANG KUAT'; // GANTI DENGAN KUNCI RAHASIA YANG KUAT!
 
 if ($api_key !== $SECRET_API_KEY) {
     send_json_response(['error' => 'Invalid API Key'], 401);

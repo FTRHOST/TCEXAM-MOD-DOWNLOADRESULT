@@ -13,7 +13,7 @@ import {
     Alert,
     Snackbar
 } from '@mui/material';
-import { getModules, getGroups, getTests, downloadExcel } from '../services/api';
+import { getModules, getGroups, getTests, downloadExcel, downloadModuleZip, downloadGroupZip } from '../services/api';
 
 function DownloadForm() {
     // State for data
@@ -117,6 +117,24 @@ function DownloadForm() {
         downloadExcel(selectedTest, selectedGroup);
     };
 
+    // Handle download Module ZIP
+    const handleDownloadModuleZip = () => {
+        if (!selectedModule) {
+            setError('Silakan pilih modul terlebih dahulu');
+            return;
+        }
+        downloadModuleZip(selectedModule);
+    };
+
+    // Handle download Group ZIP
+    const handleDownloadGroupZip = () => {
+        if (!selectedGroup) {
+            setError('Silakan pilih grup terlebih dahulu');
+            return;
+        }
+        downloadGroupZip(selectedGroup);
+    };
+
     // Handle error close
     const handleErrorClose = () => {
         setError(null);
@@ -204,8 +222,32 @@ function DownloadForm() {
                             size="large"
                             onClick={handleDownload}
                             disabled={!selectedTest || !selectedGroup}
+                            sx={{ mb: 2 }}
                         >
-                            Download Excel
+                            Download Excel Test
+                        </Button>
+
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            fullWidth
+                            size="large"
+                            onClick={handleDownloadModuleZip}
+                            disabled={!selectedModule}
+                            sx={{ mb: 2 }}
+                        >
+                            Download ZIP Modul
+                        </Button>
+
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            fullWidth
+                            size="large"
+                            onClick={handleDownloadGroupZip}
+                            disabled={!selectedGroup}
+                        >
+                            Download ZIP Grup
                         </Button>
                     </Box>
                 </Paper>

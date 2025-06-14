@@ -146,4 +146,4 @@ Proyek ini dilisensikan di bawah [Lisensi MIT](LICENSE).
 ## 🙏 Ucapan Terima Kasih
 
 -   Terima kasih kepada **FTRHOST** atas pengembangan awal modul ini.
--   Dukungan dari **MA NU 01 Banyuputih** yang telah menginspirasi dan mendukung proyek ini.
+-   Dukungan dari **MA NU 01 Banyuputih dan MANSABA MEDIA** yang telah menginspirasi dan mendukung proyek ini.

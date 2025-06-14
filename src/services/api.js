@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://macom.manubanyuputih.id/admin/code/api.php';
+const API_URL= 'https://macom.manubanyuputih.id/';
+const API_BASE_URL = `${API_URL}/admin/code/api.php`;
 const API_KEY = 'hahay'; // GANTI DENGAN KUNCI RAHASIA YANG SAMA DENGAN BACKEND!
 
 const api = axios.create({

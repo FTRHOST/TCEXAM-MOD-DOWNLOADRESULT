@@ -111,7 +111,7 @@ function DownloadForm() {
     // Handle download
     const handleDownload = () => {
         if (!selectedTest || !selectedGroup) {
-            setError('Silakan pilih modul, grup, dan tes terlebih dahulu');
+            setError('Silakan pilih Kegiatan Penilaian, Kelas atau grup, dan nama mapel tes terlebih dahulu');
             return;
         }
         downloadExcel(selectedTest, selectedGroup);
@@ -120,7 +120,7 @@ function DownloadForm() {
     // Handle download Module ZIP
     const handleDownloadModuleZip = () => {
         if (!selectedModule) {
-            setError('Silakan pilih modul terlebih dahulu');
+            setError('Silakan pilih kegiatan penilaian terlebih dahulu');
             return;
         }
         downloadModuleZip(selectedModule);
@@ -129,7 +129,7 @@ function DownloadForm() {
     // Handle download Group ZIP
     const handleDownloadGroupZip = () => {
         if (!selectedGroup) {
-            setError('Silakan pilih grup terlebih dahulu');
+            setError('Silakan pilih kelas atau grup terlebih dahulu');
             return;
         }
         downloadGroupZip(selectedGroup);
@@ -143,6 +143,9 @@ function DownloadForm() {
     return (
         <Container maxWidth="sm">
             <Box sx={{ mt: 4, mb: 4 }}>
+                <Typography variant="h3" component="h2" gutterBottom align="center" sx={{ color: '#6a4fff', fontWeight: 'bold' }}>
+                    Hi, Teacher!
+                </Typography>
                 <Paper elevation={3} sx={{ p: 4 }}>
                     <Typography variant="h4" component="h1" gutterBottom align="center">
                         Download Laporan Nilai Ujian
@@ -150,7 +153,7 @@ function DownloadForm() {
 
                     <Box sx={{ mt: 4 }}>
                         <FormControl fullWidth sx={{ mb: 3 }}>
-                            <InputLabel>Modul</InputLabel>
+                            <InputLabel>Kegiatan Penilaian</InputLabel>
                             <Select
                                 value={selectedModule}
                                 onChange={handleModuleChange}
@@ -158,7 +161,7 @@ function DownloadForm() {
                                 disabled={loading.modules}
                             >
                                 <MenuItem value="">
-                                    <em>Pilih Modul</em>
+                                    <em>Pilih Kegiatan Penilaian</em>
                                 </MenuItem>
                                 {modules.map((module) => (
                                     <MenuItem key={module.module_id} value={module.module_id}>
@@ -172,7 +175,7 @@ function DownloadForm() {
                         </FormControl>
 
                         <FormControl fullWidth sx={{ mb: 3 }}>
-                            <InputLabel>Grup</InputLabel>
+                            <InputLabel>Kelas atau Group</InputLabel>
                             <Select
                                 value={selectedGroup}
                                 onChange={handleGroupChange}
@@ -180,7 +183,7 @@ function DownloadForm() {
                                 disabled={!selectedModule || loading.groups}
                             >
                                 <MenuItem value="">
-                                    <em>Pilih Grup</em>
+                                    <em>Pilih Kelas atau Group</em>
                                 </MenuItem>
                                 {groups.map((group) => (
                                     <MenuItem key={group.group_id} value={group.group_id}>
@@ -194,7 +197,7 @@ function DownloadForm() {
                         </FormControl>
 
                         <FormControl fullWidth sx={{ mb: 4 }}>
-                            <InputLabel>Tes</InputLabel>
+                            <InputLabel>Mapel Tes</InputLabel>
                             <Select
                                 value={selectedTest}
                                 onChange={handleTestChange}
@@ -202,7 +205,7 @@ function DownloadForm() {
                                 disabled={!selectedGroup || loading.tests}
                             >
                                 <MenuItem value="">
-                                    <em>Pilih Tes</em>
+                                    <em>Pilih Mapel Tes</em>
                                 </MenuItem>
                                 {tests.map((test) => (
                                     <MenuItem key={test.test_id} value={test.test_id}>
@@ -263,6 +266,12 @@ function DownloadForm() {
                     {error}
                 </Alert>
             </Snackbar>
+            <Box sx={{ textAlign: 'center', mt: 4, mb: 4, color: '#888', fontSize: '0.875rem' }}>
+                &copy; {new Date().getFullYear()}{' '}
+                <a href="https://github.com/ftrhost" target="_blank" rel="noopener noreferrer" style={{ color: '#888', textDecoration: 'underline' }}>
+                    mansaba media
+                </a>. All rights reserved.
+            </Box>
         </Container>
     );
 }

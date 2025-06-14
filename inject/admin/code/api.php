@@ -23,6 +23,9 @@ require_once('./tce_functions_user_select.php');
 require_once('../../shared/code/tce_functions_test_stats.php');
 require_once('../../shared/config/tce_db_config.php');
 
+// Suppress deprecation warnings for PHPExcel
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_WARNING);
+
 // Define logs directory if not defined
 if (!defined('K_PATH_LOGS')) {
     define('K_PATH_LOGS', K_PATH_MAIN.'logs/');
@@ -36,8 +39,17 @@ if (!is_dir(K_PATH_LOGS)) {
 }
 
 // Set error reporting for development
-error_reporting(E_ALL & ~E_DEPRECATED);
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_WARNING);
 ini_set('display_errors', 0);
+
+// Set custom error handler for PHPExcel
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    // Only log if it's not a PHPExcel deprecated warning
+    if (strpos($errfile, 'PHPExcel') === false || $errno !== E_DEPRECATED) {
+        error_log("Error [$errno] $errstr on line $errline in file $errfile");
+    }
+    return true;
+});
 
 // Helper function to send JSON response
 function send_json_response($data, $status_code = 200) {
@@ -118,84 +130,136 @@ if ($api_key !== $SECRET_API_KEY) {
 
 // Helper function to generate Excel content
 function generate_excel_content($test_id, $group_id, $db) {
+    // Validate inputs
+    if (!is_numeric($test_id) || !is_numeric($group_id)) {
+        error_log('generate_excel_content: Invalid test_id or group_id: test_id='.$test_id.' group_id='.$group_id);
+        return '';
+    }
+
     // Get test and group info for filename
     $test_info = F_getTestData($test_id);
     $group_info = F_getGroupData($group_id);
     
-    if (!$test_info || !$group_info) {
-        error_log('generate_excel_content: Test or group not found for test_id='.$test_id.' group_id='.$group_id);
-        return ''; 
+    if (!$test_info) {
+        error_log('generate_excel_content: Test not found for test_id='.$test_id);
+        return '';
+    }
+    if (!$group_info) {
+        error_log('generate_excel_content: Group not found for group_id='.$group_id);
+        return '';
     }
 
-    // Get test data
-    $data = F_getAllUsersTestStat(
-        $test_id, 
-        $group_id, 
-        0, 
-        '0000-01-01 00:00:00', 
-        '9999-12-31 23:59:59', 
-        'user_lastname, user_firstname', 
-        false, 
-        1
-    );
+    // Get test data with error handling
+    try {
+        $data = F_getAllUsersTestStat(
+            $test_id, 
+            $group_id, 
+            0, 
+            '0000-01-01 00:00:00', 
+            '9999-12-31 23:59:59', 
+            'user_lastname, user_firstname', 
+            false, 
+            1
+        );
+    } catch (Exception $e) {
+        error_log('generate_excel_content: Error getting test stats: ' . $e->getMessage());
+        return '';
+    }
 
     if (!isset($data['testuser']) || empty($data['testuser'])) {
         error_log('generate_excel_content: No test data found for test_id='.$test_id.' group_id='.$group_id);
-        return ''; 
+        return '';
     }
 
-    require_once(K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel.php');
-    require_once(K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel/IOFactory.php');
-    require_once(K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel/Style/Alignment.php');
-    require_once(K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel/Style/Border.php');
+    error_log('generate_excel_content: Number of test users found: ' . count($data['testuser']));
+
+    // Check if PHPExcel files exist
+    $phpExcelPath = K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel.php';
+    if (!file_exists($phpExcelPath)) {
+        error_log('generate_excel_content: PHPExcel not found at: ' . $phpExcelPath);
+        return '';
+    }
+
+    try {
+        require_once($phpExcelPath);
+        require_once(K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel/IOFactory.php');
+        require_once(K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel/Style/Alignment.php');
+        require_once(K_PATH_ADMIN_CODE.'PHPExcel/Classes/PHPExcel/Style/Border.php');
+    } catch (Exception $e) {
+        error_log('generate_excel_content: Error loading PHPExcel: ' . $e->getMessage());
+        return '';
+    }
     
-    $objPHPExcel = new PHPExcel();
-    $sheet = $objPHPExcel->setActiveSheetIndex(0);
-    $sheet->setTitle('Hasil Tes');
+    try {
+        $objPHPExcel = new PHPExcel();
+        $sheet = $objPHPExcel->setActiveSheetIndex(0);
+        $sheet->setTitle('Hasil Tes');
 
-    // Add Class and Subject information
-    $sheet->setCellValue('A1', 'Kelas: ' . $group_info['group_name']);
-    $sheet->setCellValue('A2', 'Mapel: ' . $test_info['test_name']);
+        // Add Class and Subject information
+        $sheet->setCellValue('A1', 'Kelas: ' . $group_info['group_name']);
+        $sheet->setCellValue('A2', 'Mapel: ' . $test_info['test_name']);
 
-    // Set column widths
-    $sheet->getColumnDimension('A')->setWidth(5);  // No
-    $sheet->getColumnDimension('B')->setWidth(30); // Nama
-    $sheet->getColumnDimension('C')->setWidth(30); // Mapel (re-added)
-    $sheet->getColumnDimension('D')->setWidth(15); // Skor (shifted to D)
+        // Set column widths
+        $sheet->getColumnDimension('A')->setWidth(5);  // No
+        $sheet->getColumnDimension('B')->setWidth(30); // Nama
+        $sheet->getColumnDimension('C')->setWidth(30); // Mapel (re-added)
+        $sheet->getColumnDimension('D')->setWidth(15); // Skor (shifted to D)
 
-    // Style for header
-    $headerStyle = [
-        'font' => ['bold' => true],
-        'alignment' => ['horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER],
-        'borders' => ['allborders' => ['style' => PHPExcel_Style_Border::BORDER_THIN]]
-    ];
+        // Style for header
+        $headerStyle = [
+            'font' => ['bold' => true],
+            'alignment' => ['horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allborders' => ['style' => PHPExcel_Style_Border::BORDER_THIN]]
+        ];
 
-    // Add header
-    $headers = ['No', 'Nama Lengkap', 'Mapel', 'Skor']; // Re-added 'Mapel'
-    $sheet->fromArray($headers, NULL, 'A4'); // Start at row 4 for headers
-    $sheet->getStyle('A4:D4')->applyFromArray($headerStyle); // Adjusted range to D
+        // Add header
+        $headers = ['No', 'Nama Lengkap', 'Mapel', 'Skor']; // Re-added 'Mapel'
+        $sheet->fromArray($headers, NULL, 'A4'); // Start at row 4 for headers
+        $sheet->getStyle('A4:D4')->applyFromArray($headerStyle); // Adjusted range to D
 
-    // Add data
-    $row_num = 5; // Start data from row 5
-    foreach ($data['testuser'] as $idx => $user) {
-        $sheet->setCellValue('A'.$row_num, $idx + 1);
-        $sheet->setCellValue('B'.$row_num, $user['user_firstname'].' '.$user['user_lastname']);
-        $sheet->setCellValue('C'.$row_num, $user['test']['test_name']); // Populating 'Mapel' with test name
-        $sheet->setCellValue('D'.$row_num, (float)($user['total_score'] ?? 0)); // Skor is now D
-        $row_num++;
+        // Add data
+        $row_num = 5; // Start data from row 5
+        foreach ($data['testuser'] as $idx => $user) {
+            error_log('generate_excel_content: Processing user at index ' . $idx . ', user_id: ' . (isset($user['user_id']) ? $user['user_id'] : 'N/A') . ', user_name: ' . (isset($user['user_firstname']) ? $user['user_firstname'] . ' ' . $user['user_lastname'] : 'N/A'));
+            $sheet->setCellValue('A'.$row_num, $idx + 1);
+            $sheet->setCellValue('B'.$row_num, $user['user_firstname'].' '.$user['user_lastname']);
+            $sheet->setCellValue('C'.$row_num, $user['test']['test_name']); // Populating 'Mapel' with test name
+            
+            // Improved total_score handling
+            $total_score = '0';
+            if (isset($user['total_score'])) {
+                // Convert to string first to ensure consistent handling
+                $total_score = (string)$user['total_score'];
+                // Remove any non-numeric characters except decimal point
+                $total_score = preg_replace('/[^0-9.]/', '', $total_score);
+                // Ensure we have a valid number
+                if (!is_numeric($total_score)) {
+                    error_log('Invalid total_score value: ' . $user['total_score'] . ' for user: ' . $user['user_firstname'] . ' ' . $user['user_lastname']);
+                    $total_score = '0';
+                }
+            }
+            
+            // Convert to float for Excel cell
+            $total_score = (float)$total_score;
+            $sheet->setCellValue('D'.$row_num, $total_score);
+            $row_num++;
+        }
+
+        // Auto-size columns
+        foreach(range('A','D') as $col) { // Adjusted range to D
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Save Excel to output buffer
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+        ob_start();
+        $objWriter->save('php://output');
+        $excelOutput = ob_get_clean();
+        return $excelOutput;
+    } catch (Exception $e) {
+        error_log('generate_excel_content: Error generating Excel: ' . $e->getMessage());
+        return '';
     }
-
-    // Auto-size columns
-    foreach(range('A','D') as $col) { // Adjusted range to D
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
-
-    // Save Excel to output buffer
-    $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
-    ob_start();
-    $objWriter->save('php://output');
-    $excelOutput = ob_get_clean();
-    return $excelOutput;
 }
 
 // Get action from request
@@ -221,8 +285,55 @@ ini_set('error_log', K_PATH_LOGS.'php_error_'.date('Ymd').'.log');
 
 // Set a custom temporary directory (created in the project root) for ZipArchive (and other PHP functions) to use.
 $tmp_dir = __DIR__ . '/../../tmp';
-if (!is_dir($tmp_dir)) { mkdir($tmp_dir, 0777, true); }
-ini_set('sys_temp_dir', $tmp_dir);
+if (!is_dir($tmp_dir)) {
+    if (!@mkdir($tmp_dir, 0777, true)) {
+        error_log('Failed to create temporary directory: ' . $tmp_dir . ' - Error: ' . error_get_last()['message']);
+        send_json_response(['error' => 'Server configuration error: Cannot create temporary directory'], 500);
+        exit;
+    }
+}
+
+// Check if directory is writable
+if (!is_writable($tmp_dir)) {
+    error_log('Temporary directory is not writable: ' . $tmp_dir);
+    send_json_response(['error' => 'Server configuration error: Temporary directory is not writable'], 500);
+    exit;
+}
+
+// Set memory limit for large ZIP files
+$current_memory_limit = ini_get('memory_limit');
+$memory_limit_bytes = return_bytes($current_memory_limit);
+if ($memory_limit_bytes < 256 * 1024 * 1024) { // Less than 256MB
+    @ini_set('memory_limit', '256M');
+}
+
+// Helper function to convert memory limit string to bytes
+function return_bytes($val) {
+    $val = trim($val);
+    $last = strtolower($val[strlen($val)-1]);
+    $val = substr($val, 0, -1);
+    switch($last) {
+        case 'g': $val *= 1024;
+        case 'm': $val *= 1024;
+        case 'k': $val *= 1024;
+    }
+    return $val;
+}
+
+// Helper function to clean up temporary files
+function cleanup_temp_files($pattern) {
+    global $tmp_dir;
+    $files = glob($tmp_dir . '/' . $pattern);
+    foreach ($files as $file) {
+        if (is_file($file) && (time() - filemtime($file) > 3600)) { // Delete files older than 1 hour
+            @unlink($file);
+        }
+    }
+}
+
+// Clean up old temporary files
+cleanup_temp_files('*.zip');
+cleanup_temp_files('*.xlsx');
 
 try {
     switch ($action) {

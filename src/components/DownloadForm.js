@@ -227,7 +227,7 @@ function DownloadForm() {
                             disabled={!selectedTest || !selectedGroup}
                             sx={{ mb: 2 }}
                         >
-                            Download Excel Test
+                            Download Excel per Mapel Test
                         </Button>
 
                         <Button
@@ -239,7 +239,7 @@ function DownloadForm() {
                             disabled={!selectedModule}
                             sx={{ mb: 2 }}
                         >
-                            Download ZIP Modul
+                            Download ZIP Penilaian Kegiatan (dipilih)
                         </Button>
 
                         <Button
@@ -250,7 +250,7 @@ function DownloadForm() {
                             onClick={handleDownloadGroupZip}
                             disabled={!selectedGroup}
                         >
-                            Download ZIP Grup
+                            Download ZIP Kelas atau Group
                         </Button>
                     </Box>
                 </Paper>
